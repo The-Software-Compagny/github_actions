@@ -1,0 +1,47 @@
+name: "Docker Image CI"
+description: "Build docker image"
+inputs:
+  registry:
+    description: 'Docker registry base url'
+    default: 'ghcr.io'
+    required: false
+  context:
+    description: 'Docker context'
+    default: '.'
+    required: false
+  repository:
+    description: 'Repository to the project'
+    required: true
+  username:
+    description: 'Username to the project'
+    required: true
+  password:
+    description: 'Password to the project'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Log in to the Container registry
+      uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.username }}
+        password: ${{ inputs.password }}
+      env:
+        REGISTRY: ${{ inputs.registry }}
+        IMAGE_NAME: ${{ inputs.repository }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+      with:
+        images: ${{ inputs.registry }}/${{ inputs.repository }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+      with:
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        context: ${{ inputs.context }}
+        push: true
